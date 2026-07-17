@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- ============ متادیتای Team Top ============ -->
+    <title>فارکس سشن مانیتور | Team Top</title>
+    <meta name="description" content="مانیتور حرفه‌ای سشن‌های بازارهای مالی با هشدار صوتی. اولویت آنلاین، پشتیبانی آفلاین. ساخته شده توسط Team Top.">
+    <meta name="keywords" content="فارکس, سشن, ترید, هشدار, Team Top, بازارهای مالی">
+    <meta name="author" content="Team Top">
+    <meta name="application-name" content="Team Top Session Monitor">
+    <meta name="version" content="1.0.0">
+    <meta name="theme-color" content="#0a0e17">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Team Top">
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --card: #131a2b;
+            --active-card: #0a1f18;
+            --text: #d0d5dd;
+            --muted: #8890a4;
+            --gold: #f0b90b;
+            --blue: #2e8fff;
+            --orange: #f57c2e;
+            --green: #0ecb7e;
+            --red: #f84a4a;
+            --border: #1e2a3a;
+            --radius: 12px;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { height: 100%; }
+        body {
+            font-family: 'Segoe UI', 'Tahoma', 'Noto Sans Arabic', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 12px;
+            padding-bottom: env(safe-area-inset-bottom, 12px);
+        }
+        .app {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        /* وضعیت اتصال */
+        .connection-status {
+            text-align: center;
+            font-size: 0.65rem;
+            margin-bottom: 8px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            width: 100%;
+        }
+        .connection-status.online { color: var(--green); }
+        .connection-status.offline { color: var(--orange); }
+
+        .header { text-align: center; margin-bottom: 16px; }
+        .header h1 { font-size: clamp(1.1rem, 4vw, 1.4rem); margin-bottom: 2px; }
+        .header .subtitle { font-size: clamp(0.65rem, 2.5vw, 0.75rem); color: var(--muted); }
+
+        .signature {
+            text-align: center;
+            margin-bottom: 12px;
+            font-size: clamp(0.6rem, 2vw, 0.7rem);
+            color: #444;
+        }
+        .signature span { color: var(--orange); font-weight: bold; }
+
+        .power-bar {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: clamp(10px, 3vw, 14px) clamp(12px, 3vw, 18px);
+            margin-bottom: 14px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .power-indicator {
+            width: clamp(38px, 10vw, 48px);
+            height: clamp(38px, 10vw, 48px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.2rem, 4vw, 1.5rem);
+            flex-shrink: 0;
+        }
+        .power-low { background: #1a2a1a; color: #4a4; }
+        .power-mid { background: #2a2a1a; color: #ca8; }
+        .power-high { background: #2a1a1a; color: #f66; }
+        .power-info h3 { font-size: clamp(0.8rem, 3vw, 0.95rem); margin-bottom: 2px; }
+        .power-info p { font-size: clamp(0.65rem, 2.5vw, 0.75rem); color: var(--muted); }
+
+        .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+        .tabs button {
+            flex:1; padding: clamp(8px, 2.5vw, 10px) 6px;
+            border: 1px solid var(--border);
+            background: var(--card);
+            color: var(--muted);
+            border-radius: 10px;
+            font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+            cursor: pointer;
+            transition: .2s;
+            white-space: nowrap;
+        }
+        .tabs button.active-tab {
+            background: var(--orange);
+            color: #fff;
+            border-color: var(--orange);
+            font-weight: bold;
+        }
+
+        .session-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: clamp(10px, 3vw, 14px);
+            margin-bottom: 8px;
+            border: 2px solid var(--border);
+            transition: .3s;
+            position: relative;
+        }
+        .session-card.active { border-color: var(--green); background: var(--active-card); }
+        .session-card.overlap { border-color: var(--orange); box-shadow: 0 0 12px rgba(245,124,46,0.15); }
+        .session-card.closing { border-color: var(--red); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+        .session-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+        .session-header .name { font-size: clamp(0.8rem, 3vw, 0.9rem); font-weight: bold; }
+        .session-header .countdown { font-size: clamp(0.75rem, 2.5vw, 0.85rem); direction: ltr; }
+        .session-time { font-size: clamp(0.65rem, 2vw, 0.72rem); color: var(--muted); margin-bottom: 6px; }
+        .session-time .status-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-left: 3px; }
+        .status-dot.active-dot { background: var(--green); }
+        .status-dot.inactive-dot { background: var(--red); }
+
+        .alarm-row { display: flex; gap: 4px; flex-wrap: wrap; }
+        .alarm-row label {
+            font-size: clamp(0.6rem, 2vw, 0.68rem);
+            display: flex; align-items: center; gap: 2px;
+            background: #0a0e17; padding: 2px 6px;
+            border-radius: 6px; cursor: pointer;
+            border: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .alarm-row input { accent-color: var(--green); width: 13px; height: 13px; }
+
+        .settings-toggle { text-align: center; margin-top: 12px; }
+        .settings-toggle button {
+            background: transparent; border: 1px solid var(--border);
+            color: var(--muted); padding: 6px 16px;
+            border-radius: 8px; cursor: pointer;
+            font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+        }
+        .settings-panel {
+            display: none; background: var(--card);
+            border-radius: var(--radius); padding: 12px;
+            margin-top: 8px; border: 1px solid var(--border);
+        }
+        .settings-panel.show { display: block; }
+        .settings-panel label { display: block; font-size: clamp(0.65rem, 2vw, 0.75rem); margin-bottom: 6px; color: var(--muted); }
+        .settings-panel input[type="number"] {
+            width: 45px; background: #0a0e17;
+            border: 1px solid var(--border); color: var(--text);
+            padding: 3px 5px; border-radius: 4px;
+            font-size: 0.75rem; margin: 0 2px;
+        }
+        .settings-panel .save-btn {
+            background: var(--orange); color: #fff;
+            border: none; padding: 6px 14px;
+            border-radius: 8px; cursor: pointer;
+            margin-top: 8px; font-size: 0.75rem;
+        }
+
+        .footer {
+            text-align: center; font-size: clamp(0.55rem, 2vw, 0.65rem); color: #444;
+            margin-top: 12px; padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+        .footer .credit { color: var(--orange); font-weight: bold; }
+        .footer .version { color: #555; margin-right: 6px; }
+
+        /* حالت افقی */
+        @media (min-width: 600px) and (orientation: landscape) {
+            body { padding: 16px 24px; }
+            .app { max-width: 600px; }
+            .session-card { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+            .session-header { flex: 1; min-width: 150px; }
+            .session-time { flex: 1; min-width: 150px; margin-bottom: 0; }
+            .alarm-row { flex: 0; }
+        }
+        @media (min-width: 768px) {
+            body { padding: 20px 32px; }
+            .app { max-width: 650px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <!-- وضعیت اتصال -->
+    <div class="connection-status" id="connStatus">🟢 آنلاین</div>
+
+    <div class="header">
+        <h1>📊 Team Top Session Monitor</h1>
+        <div class="subtitle">حرفه‌ای • دقیق • همیشه همراه شما</div>
+    </div>
+
+    <div class="signature">
+        ساخته شده توسط <span>Team Top</span> • نسخه <span>1.0.0</span>
+    </div>
+
+    <div class="power-bar" id="powerBar">
+        <div class="power-indicator power-low" id="powerIcon">🐢</div>
+        <div class="power-info">
+            <h3 id="powerTitle">حجم بازار: کم</h3>
+            <p id="powerDesc">در حال حاضر فقط بازار توکیو فعال است</p>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button id="tab-forex" class="active-tab" onclick="switchTab('forex')">💱 فارکس</button>
+        <button id="tab-stock" onclick="switchTab('stock')">📈 بورس</button>
+    </div>
+
+    <div id="sessionContainer"></div>
+
+    <div class="settings-toggle">
+        <button onclick="toggleSettings()">⚙️ تنظیمات ساعت بازارها</button>
+    </div>
+    <div class="settings-panel" id="settingsPanel">
+        <p style="font-size:0.7rem;color:var(--muted);margin-bottom:8px;">تغییرات فقط برای بخش فعلی اعمال میشه. برای بازگشت به پیش‌فرض، صفحه رو بازنشانی کنید.</p>
+        <div id="settingsContent"></div>
+        <button class="save-btn" onclick="applyCustomTimes()">💾 اعمال تغییرات</button>
+    </div>
+
+    <div class="footer">
+        <span class="credit">Team Top</span> © 2025
+        <span class="version">v1.0.0</span>
+        <br>سشن مانیتور حرفه‌ای برای تریدرهای فارسی‌زبان
+    </div>
+</div>
+
+<script>
+    // ============ دیتای بازارها (فارسی) ============
+    const defaultForex = [
+        { id:'tokyo', name:'🇯🇵 توکیو (آسیا)', startH:2,startM:0, endH:10,endM:0, css:'asia', tz:'Asia/Tokyo' },
+        { id:'london', name:'🇬🇧 لندن (اروپا)', startH:12,startM:30, endH:19,endM:0, css:'europe', tz:'Europe/London' },
+        { id:'newyork', name:'🇺🇸 نیویورک (آمریکا)', startH:17,startM:0, endH:2,endM:0, css:'america', tz:'America/New_York' }
+    ];
+    const defaultStock = [
+        { id:'nyse', name:'🇺🇸 وال استریت (NYSE)', startH:17,startM:0, endH:2,endM:0, css:'america', tz:'America/New_York' },
+        { id:'lse', name:'🇬🇧 لندن (LSE)', startH:12,startM:30, endH:19,endM:0, css:'europe', tz:'Europe/London' },
+        { id:'tse', name:'🇯🇵 توکیو (TSE)', startH:2,startM:0, endH:10,endM:0, css:'asia', tz:'Asia/Tokyo' },
+        { id:'bors', name:'🇮🇷 بورس تهران', startH:9,startM:0, endH:12, endM:30, css:'europe', tz:'Asia/Tehran' }
+    ];
+
+    let currentTab = 'forex';
+    let forexSessions = JSON.parse(JSON.stringify(defaultForex));
+    let stockSessions = JSON.parse(JSON.stringify(defaultStock));
+    let lastAlerted = {};
+    let audioCtx = null;
+    let isOnline = navigator.onLine;
+
+    // ============ مدیریت آنلاین/آفلاین ============
+    function updateConnectionStatus() {
+        isOnline = navigator.onLine;
+        const el = document.getElementById('connStatus');
+        if (isOnline) {
+            el.textContent = '🟢 آنلاین — همگام‌سازی فعال';
+            el.className = 'connection-status online';
+        } else {
+            el.textContent = '🟠 آفلاین — استفاده از ساعت سیستم';
+            el.className = 'connection-status offline';
+        }
+    }
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    updateConnectionStatus();
+
+    function playBeep() {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.connect(g); g.connect(audioCtx.destination);
+            o.frequency.value = 880; o.type = 'sine'; g.gain.value = 0.25;
+            o.start(); o.stop(audioCtx.currentTime + 0.25);
+        } catch(e) {}
+    }
+    function getTehranTime() {
+        const now = new Date();
+        const t = new Date(now.getTime() + 3.5*60*60*1000);
+        return { h:t.getUTCHours(), m:t.getUTCMinutes(), d:t.getUTCDay() };
+    }
+    function getMins(h,m) { return h*60+m; }
+    function isActive(now,s,e) { return s<e ? (now>=s && now<e) : (now>=s || now<e); }
+    function minsUntil(target, now) { let d=target-now; if(d<0) d+=1440; return d; }
+    function fmt(m) { if(m<=0) return '0m'; const h=Math.floor(m/60), mn=m%60; return h>0?h+'h '+mn+'m':mn+'m'; }
+
+    function getMarketPower(sessions) {
+        const t = getTehranTime();
+        const now = getMins(t.h, t.m);
+        let activeCount = 0, hasLondon = false, hasNewYork = false, hasTokyo = false;
+        sessions.forEach(s => {
+            if (isActive(now, getMins(s.startH,s.startM), getMins(s.endH,s.endM))) {
+                activeCount++;
+                if (s.id === 'london' || s.id === 'lse') hasLondon = true;
+                if (s.id === 'newyork' || s.id === 'nyse') hasNewYork = true;
+                if (s.id === 'tokyo' || s.id === 'tse') hasTokyo = true;
+            }
+        });
+        if (hasLondon && hasNewYork) return { level:'high', icon:'🐂', title:'حجم بازار: زیاد', desc:'هم‌پوشانی لندن و نیویورک — بهترین زمان معامله!', cls:'power-high' };
+        if (hasLondon) return { level:'mid', icon:'🐆', title:'حجم بازار: متوسط', desc:'بازار لندن فعال — حجم مناسب', cls:'power-mid' };
+        if (hasNewYork) return { level:'mid', icon:'🐆', title:'حجم بازار: متوسط', desc:'بازار نیویورک فعال — حجم مناسب', cls:'power-mid' };
+        if (hasTokyo) return { level:'mid', icon:'🐈', title:'حجم بازار: متوسط', desc:'بازار توکیو فعال — حجم معمولی', cls:'power-mid' };
+        return { level:'low', icon:'🐢', title:'حجم بازار: کم', desc:'بازار اصلی فعال نیست — با احتیاط معامله کنید', cls:'power-low' };
+    }
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tab-forex').classList.toggle('active-tab', tab==='forex');
+        document.getElementById('tab-stock').classList.toggle('active-tab', tab==='stock');
+        renderAll();
+    }
+    function toggleSettings() {
+        document.getElementById('settingsPanel').classList.toggle('show');
+        renderSettings();
+    }
+    function renderSettings() {
+        const sessions = currentTab==='forex' ? forexSessions : stockSessions;
+        document.getElementById('settingsContent').innerHTML = sessions.map(s => `
+            <div style="margin-bottom:10px;border-bottom:1px solid var(--border);padding-bottom:8px;">
+                <strong style="font-size:0.75rem;">${s.name}</strong><br>
+                <label>شروع: <input type="number" id="set_${s.id}_sh" value="${s.startH}" min="0" max="23"> :
+                <input type="number" id="set_${s.id}_sm" value="${s.startM}" min="0" max="59"></label>
+                <label>پایان: <input type="number" id="set_${s.id}_eh" value="${s.endH}" min="0" max="23"> :
+                <input type="number" id="set_${s.id}_em" value="${s.endM}" min="0" max="59"></label>
+            </div>
+        `).join('');
+    }
+    function applyCustomTimes() {
+        const sessions = currentTab==='forex' ? forexSessions : stockSessions;
+        sessions.forEach(s => {
+            const sh = parseInt(document.getElementById('set_'+s.id+'_sh')?.value) || s.startH;
+            const sm = parseInt(document.getElementById('set_'+s.id+'_sm')?.value) || s.startM;
+            const eh = parseInt(document.getElementById('set_'+s.id+'_eh')?.value) || s.endH;
+            const em = parseInt(document.getElementById('set_'+s.id+'_em')?.value) || s.endM;
+            s.startH = sh; s.startM = sm; s.endH = eh; s.endM = em;
+        });
+        renderAll();
+    }
+
+    function renderAll() { renderSessions(); updateUI(); }
+
+    function renderSessions() {
+        const sessions = currentTab==='forex' ? forexSessions : stockSessions;
+        document.getElementById('sessionContainer').innerHTML = sessions.map(s => `
+            <div class="session-card ${s.css}" id="${s.id}-card">
+                <div class="session-header">
+                    <span class="name">${s.name}</span>
+                    <span class="countdown" id="${s.id}-countdown">—</span>
+                </div>
+                <div class="session-time">
+                    ${String(s.startH).padStart(2,'0')}:${String(s.startM).padStart(2,'0')} — ${String(s.endH).padStart(2,'0')}:${String(s.endM).padStart(2,'0')} (تهران)
+                    <span id="${s.id}-status">—</span>
+                </div>
+                <div class="alarm-row">
+                    <label><input type="checkbox" id="${s.id}_1h" checked> ۱ ساعت</label>
+                    <label><input type="checkbox" id="${s.id}_15m" checked> ۱۵ دقیقه</label>
+                    <label><input type="checkbox" id="${s.id}_5m" checked> ۵ دقیقه</label>
+                    <label><input type="checkbox" id="${s.id}_0m" checked> لحظه</label>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function isAlarmChecked(sessionId, type) {
+        const el = document.getElementById(sessionId + '_' + type);
+        return el ? el.checked : false;
+    }
+
+    function updateUI() {
+        const t = getTehranTime();
+        const nowMins = getMins(t.h, t.m);
+        const sessions = currentTab==='forex' ? forexSessions : stockSessions;
+
+        const power = getMarketPower(sessions);
+        document.getElementById('powerIcon').textContent = power.icon;
+        document.getElementById('powerTitle').textContent = power.title;
+        document.getElementById('powerDesc').textContent = power.desc;
+        document.getElementById('powerBar').querySelector('.power-indicator').className = 'power-indicator ' + power.cls;
+
+        sessions.forEach(s => {
+            const sMins = getMins(s.startH, s.startM), eMins = getMins(s.endH, s.endM);
+            const active = isActive(nowMins, sMins, eMins);
+            const minsLeft = active ? minsUntil(eMins, nowMins) : minsUntil(sMins, nowMins);
+            const card = document.getElementById(s.id+'-card');
+            const countdownEl = document.getElementById(s.id+'-countdown');
+            const statusEl = document.getElementById(s.id+'-status');
+
+            if (countdownEl) countdownEl.textContent = fmt(minsLeft);
+            if (statusEl) statusEl.innerHTML = active
+                ? '<span class="status-dot active-dot"></span> باز'
+                : '<span class="status-dot inactive-dot"></span> بسته';
+            if (card) { card.classList.toggle('active', active); card.classList.remove('closing', 'overlap'); }
+
+            sessions.filter(x => x.id !== s.id).forEach(o => {
+                if (active && isActive(nowMins, getMins(o.startH,o.startM), getMins(o.endH,o.endM))) {
+                    if (card) card.classList.add('overlap');
+                }
+            });
+
+            [60,15,5,0].forEach(cp => {
+                const type = cp===60?'1h':cp===15?'15m':cp===5?'5m':'0m';
+                const key = s.id+'_'+type;
+                if (minsLeft === cp && isAlarmChecked(s.id, type)) {
+                    if (lastAlerted[key] !== t.d+'_'+t.h+'_'+t.m) {
+                        lastAlerted[key] = t.d+'_'+t.h+'_'+t.m;
+                        if (card && cp<=5) card.classList.add('closing');
+                        playBeep();
+                        if (cp===0) setTimeout(playBeep, 500);
+                    }
+                }
+            });
+        });
+    }
+
+    renderAll();
+    setInterval(updateUI, 1000);
+</script>
+</body>
+</html>
